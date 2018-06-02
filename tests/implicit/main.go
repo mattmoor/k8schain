@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/google/go-containerregistry/name"
-	"github.com/google/go-containerregistry/v1/remote"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 
 	"github.com/mattmoor/k8schain"
 )

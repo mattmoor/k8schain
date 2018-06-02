@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-containerregistry/authn"
-	"github.com/google/go-containerregistry/name"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
