@@ -34,6 +34,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: noauth
+  annotations:
+    sidecar.istio.io/inject: "false"
 spec:
   serviceAccountName: noauth
   containers:

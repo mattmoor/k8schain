@@ -69,25 +69,27 @@ func New(client kubernetes.Interface, opt Options) (authn.Keychain, error) {
 
 	// First, fetch all of the explicitly declared pull secrets
 	var pullSecrets []v1.Secret
-	for _, name := range opt.ImagePullSecrets {
-		ps, err := client.CoreV1().Secrets(opt.Namespace).Get(name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+	if client != nil {
+		for _, name := range opt.ImagePullSecrets {
+			ps, err := client.CoreV1().Secrets(opt.Namespace).Get(name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			pullSecrets = append(pullSecrets, *ps)
 		}
-		pullSecrets = append(pullSecrets, *ps)
-	}
 
-	// Second, fetch all of the pull secrets attached to our service account.
-	sa, err := client.CoreV1().ServiceAccounts(opt.Namespace).Get(opt.ServiceAccountName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, localObj := range sa.ImagePullSecrets {
-		ps, err := client.CoreV1().Secrets(opt.Namespace).Get(localObj.Name, metav1.GetOptions{})
+		// Second, fetch all of the pull secrets attached to our service account.
+		sa, err := client.CoreV1().ServiceAccounts(opt.Namespace).Get(opt.ServiceAccountName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
-		pullSecrets = append(pullSecrets, *ps)
+		for _, localObj := range sa.ImagePullSecrets {
+			ps, err := client.CoreV1().Secrets(opt.Namespace).Get(localObj.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			pullSecrets = append(pullSecrets, *ps)
+		}
 	}
 
 	// Third, extend the default keyring with the pull secrets.
@@ -114,6 +116,18 @@ func NewInCluster(opt Options) (authn.Keychain, error) {
 		return nil, err
 	}
 	return New(client, opt)
+}
+
+// NewNoClient returns a new authn.Keychain that supports the portion of the K8s keychain
+// that don't read ImagePullSecrets.  This limits it to roughly the Node-identity-based
+// authentication schemes in Kubernetes pkg/credentialprovider.  This version of the
+// k8schain drops the requirement that we run as a K8s serviceaccount with access to all
+// of the on-cluster secrets.  This drop in fidelity also diminishes its value as a standin
+// for Kubernetes authentication, but this actually targets a different use-case.  What
+// remains is an interesting sweet spot: this variant can serve as a credential provider
+// for all of the major public clouds, but in library form (vs. an executable you exec).
+func NewNoClient() (authn.Keychain, error) {
+	return New(nil, Options{})
 }
 
 type lazyProvider credentialprovider.LazyAuthConfiguration
